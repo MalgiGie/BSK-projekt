@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, simpledialog
 
 class SignatureApp:
     def __init__(self, master):
@@ -36,6 +36,16 @@ class SignatureApp:
             return
         
         # Place your signing logic here
+
+        # Odszukanie zaszyfrowanego klucza na pendrivie
+
+        # Podanie PINu
+        pin = simpledialog.askstring("PIN", "Please enter your PIN:", parent=self.master)
+        if pin is None:
+            # User clicked cancel
+            return
+        
+
         messagebox.showinfo("Signature", "Document signed successfully!")
 
 def main():

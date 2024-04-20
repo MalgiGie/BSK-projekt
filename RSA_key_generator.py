@@ -42,7 +42,6 @@ class KeyGeneratorApp:
         with open("private_key.enc", "wb") as private_key_file:
             private_key_file.write(encrypted_private_key)
 
-            # Save public key to a file
         with open("public_key.pem", "w") as public_key_file:
             public_key_file.write(public_key.decode())
         messagebox.showinfo("Success", "RSA keys generated and encrypted successfully.")
