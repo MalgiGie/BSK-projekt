@@ -2,7 +2,9 @@ import tkinter as tk
 from tkinter import messagebox
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad
 from Crypto.Random import get_random_bytes
+import hashlib
 
 class KeyGeneratorApp:
     def __init__(self, master):
@@ -11,13 +13,13 @@ class KeyGeneratorApp:
         master.geometry("300x100")
 
         self.label = tk.Label(master, text="Enter PIN:")
-        self.label.pack()
+        self.label.pack(pady=5)
 
         self.pin_entry = tk.Entry(master)#, show="*")
-        self.pin_entry.pack()
+        self.pin_entry.pack(pady=5)
 
         self.generate_button = tk.Button(master, text="Generate Keys", command=self.generate_keys)
-        self.generate_button.pack()
+        self.generate_button.pack(pady=5)
 
     def generate_keys(self):
         pin = self.pin_entry.get()
@@ -26,25 +28,43 @@ class KeyGeneratorApp:
             messagebox.showerror("Error", "Please enter a PIN.")
             return
 
-        # Generowanie klucza AES z PIN
-        pin_key = pin.encode() * 16 # Pad PIN to 16 bytes (AES block size)
-        aes_key = AES.new(pin_key[:16], AES.MODE_EAX)
+        # Klucz AES i IV
+        # aes_key = b'This is a key123'
+        aes_key = hashlib.sha256(pin.encode('utf-8')).digest()
+        iv = b'This is an IV456'
+
+        # Tworzenie obiektu szyfrującego AES
+        aes_cipher = AES.new(aes_key, AES.MODE_CBC, iv)
 
         # Generowanie kluczy RSA
         key_pair = RSA.generate(4096)
         private_key = key_pair.export_key()
         public_key = key_pair.public_key().export_key()
 
-        # Szyfrowanie klucza prywatnego
-        encrypted_private_key = aes_key.encrypt(private_key)
-        decrypted_private_key = aes_key.decrypt(encrypted_private_key)
+        # Padding
+        padded_private_key = pad(private_key,16)
+
+        # Szyfrowanie klucza
+        encrypted_private_key = aes_cipher.encrypt(padded_private_key)
+
+        # # Tworzenie nowego obiektu AES do deszyfrowania
+        # aes_cipher_decrypt = AES.new(aes_key, AES.MODE_CBC, iv)
+
+        # # Deszyfrowanie klucza
+        # decrypted_private_key = aes_cipher_decrypt.decrypt(encrypted_private_key)
+
+        # # Usunięcie paddingu
+        # decrypted_private_key = decrypted_private_key[:-padding[-1]]
+
+        # # Dekodowanie klucza
+        # decrypted_private_key = decrypted_private_key.decode('utf-8')
 
         # Zapis kluczy do plików
         with open("private_key.enc", "wb") as encrypted_key_file:
             encrypted_key_file.write(encrypted_private_key)
 
-        with open("decrypted_private_key.enc", "wb") as decrypted_key_file:
-            decrypted_key_file.write(decrypted_private_key)
+        # with open("decrypted_private_key.pem", "w") as decrypted_key_file:
+        #     decrypted_key_file.write(decrypted_private_key)
 
         with open("private_key.pem", "wb") as private_key_file:
             private_key_file.write(private_key)

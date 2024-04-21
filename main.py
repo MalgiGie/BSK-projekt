@@ -3,14 +3,25 @@ from tkinter import filedialog, messagebox, simpledialog
 from key_finder import KeyFinder
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import AES
+from Crypto.Util.Padding import unpad
 from Crypto.Random import get_random_bytes
+import hashlib
+from Crypto.Signature import PKCS1_v1_5
+from Crypto.Hash import SHA256
+from xades import Xades
+import os
+
 
 class MainApp:
     def __init__(self, master):
+        self.private_key = ""
         self.master = master
         master.title("BSK Application")
 
         master.geometry("400x200")
+
+        self.select_button = tk.Button(self.master, text="Enter PIN", command=self.enter_pin)
+        self.select_button.pack(pady=5)
 
         self.label = tk.Label(master, text="Select document to sign:")
         self.label.pack(pady=10)
@@ -34,11 +45,7 @@ class MainApp:
             self.selected_file_label.config(text=f"Selected file: {self.file_path}")
             self.sign_button.config(state=tk.NORMAL)
 
-    def sign_document(self):
-        if not hasattr(self, 'file_path') or not self.file_path:
-            messagebox.showerror("Error", "Please select a file first.")
-            return
-
+    def enter_pin(self):
         # Odszukanie zaszyfrowanego klucza na pendrivie
         key_finder = KeyFinder()
         encrypted_key_path = key_finder.find_encrypted_key_file()
@@ -55,22 +62,65 @@ class MainApp:
         with open(encrypted_key_path, "rb") as private_key_file:
             encrypted_private_key = private_key_file.read()
 
-        # Generowanie klucza AES z PIN
-        pin_key = pin.encode() * 16
-        aes_key = AES.new(pin_key[:16], AES.MODE_EAX)
+
+        # Tworzenie nowego obiektu AES do deszyfrowania
+        # aes_key = b'This is a key123'
+        aes_key = hashlib.sha256(pin.encode('utf-8')).digest()
+        iv = b'This is an IV456'
+
+        aes_cipher_decrypt = AES.new(aes_key, AES.MODE_CBC, iv)
 
         try:
-            # Odszyfrowanie klucza prywatnego
-            private_key = aes_key.decrypt(encrypted_private_key)
+            # Deszyfrowanie klucza
+            decrypted_private_key = aes_cipher_decrypt.decrypt(encrypted_private_key)
+
+            # Usunięcie paddingu
+            decrypted_private_key = unpad(decrypted_private_key, 16)
+
+            # Dekodowanie klucza
+            decrypted_private_key = decrypted_private_key.decode('utf-8')
+            self.private_key = decrypted_private_key
         except ValueError:
-            messagebox.showerror("Error", "Invalid PIN or encrypted private key.")
+            # Obsługa błędu deszyfrowania
+            messagebox.showerror("Error", "Incorrect PIN. Please try again.")
             return
-
+        
         # Zapisanie odszyfrowanego klucza prywatnego do pliku
-        with open("private_key.pem", "wb") as decrypted_private_key_file:
-            decrypted_private_key_file.write(private_key)
+        # with open("private_key.pem", "w") as decrypted_private_key_file:
+        #     decrypted_private_key_file.write(decrypted_private_key)
+        
+        messagebox.showinfo("Login", "PIN is correct!")
 
-        messagebox.showinfo("Success", "Private key decrypted successfully.")
+    def sign_document(self):
+        if self.private_key == "":
+            messagebox.showerror("Error", "Please enter PIN first.")
+            return
+        with open(self.file_path, 'rb') as file:
+            file_content = file.read()
+        
+        # key = RSA.import_key(self.private_key)
+        # hash_obj = SHA256.new(file_content)
+        # signer = PKCS1_v1_5.new(key)
+        # signature = signer.sign(hash_obj)
+
+        # print(signature)
+
+        # Inicjalizuj obiekt Signer
+        signer = xmlsig.Signer()
+
+        # Dodaj dokument do podpisu
+        signer.add_document(self.file_data)
+
+        # Wygeneruj podpis XAdES
+        signature = signer.sign()
+
+        # Zapisz podpis do pliku
+        signature_file_path = f"{self.file_path}.xmlsig"
+        with open(signature_file_path, "wb") as signature_file:
+            signature_file.write(signature)
+
+        print(f"Podpis XAdES został wygenerowany i zapisany do: {signature_file_path}")
+
         messagebox.showinfo("Signature", "Document signed successfully!")
 
 def main():
