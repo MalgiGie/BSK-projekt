@@ -1,10 +1,14 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox, simpledialog
+from key_finder import KeyFinder
+from Crypto.PublicKey import RSA
+from Crypto.Cipher import AES
+from Crypto.Random import get_random_bytes
 
-class SignatureApp:
+class MainApp:
     def __init__(self, master):
         self.master = master
-        master.title("Electronic Signature Application")
+        master.title("BSK Application")
 
         master.geometry("400x200")
 
@@ -34,23 +38,44 @@ class SignatureApp:
         if not hasattr(self, 'file_path') or not self.file_path:
             messagebox.showerror("Error", "Please select a file first.")
             return
-        
-        # Place your signing logic here
 
         # Odszukanie zaszyfrowanego klucza na pendrivie
-
+        key_finder = KeyFinder()
+        encrypted_key_path = key_finder.find_encrypted_key_file()
+        if not encrypted_key_path:
+            return
+        
         # Podanie PINu
         pin = simpledialog.askstring("PIN", "Please enter your PIN:", parent=self.master)
         if pin is None:
             # User clicked cancel
             return
-        
 
+        # Odczytanie zaszyfrowanego klucza prywatnego z pliku
+        with open(encrypted_key_path, "rb") as private_key_file:
+            encrypted_private_key = private_key_file.read()
+
+        # Generowanie klucza AES z PIN
+        pin_key = pin.encode() * 16
+        aes_key = AES.new(pin_key[:16], AES.MODE_EAX)
+
+        try:
+            # Odszyfrowanie klucza prywatnego
+            private_key = aes_key.decrypt(encrypted_private_key)
+        except ValueError:
+            messagebox.showerror("Error", "Invalid PIN or encrypted private key.")
+            return
+
+        # Zapisanie odszyfrowanego klucza prywatnego do pliku
+        with open("private_key.pem", "wb") as decrypted_private_key_file:
+            decrypted_private_key_file.write(private_key)
+
+        messagebox.showinfo("Success", "Private key decrypted successfully.")
         messagebox.showinfo("Signature", "Document signed successfully!")
 
 def main():
     root = tk.Tk()
-    app = SignatureApp(root)
+    app = MainApp(root)
     root.mainloop()
 
 if __name__ == "__main__":

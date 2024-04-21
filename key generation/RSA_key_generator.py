@@ -37,10 +37,17 @@ class KeyGeneratorApp:
 
         # Szyfrowanie klucza prywatnego
         encrypted_private_key = aes_key.encrypt(private_key)
+        decrypted_private_key = aes_key.decrypt(encrypted_private_key)
 
         # Zapis kluczy do plików
-        with open("private_key.enc", "wb") as private_key_file:
-            private_key_file.write(encrypted_private_key)
+        with open("private_key.enc", "wb") as encrypted_key_file:
+            encrypted_key_file.write(encrypted_private_key)
+
+        with open("decrypted_private_key.enc", "wb") as decrypted_key_file:
+            decrypted_key_file.write(decrypted_private_key)
+
+        with open("private_key.pem", "wb") as private_key_file:
+            private_key_file.write(private_key)
 
         with open("public_key.pem", "w") as public_key_file:
             public_key_file.write(public_key.decode())
