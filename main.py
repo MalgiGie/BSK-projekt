@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, simpledialog
 from key_finder import KeyFinder
 from Crypto.PublicKey import RSA
-from Crypto.Cipher import AES
+from Crypto.Cipher import AES, PKCS1_OAEP
 from Crypto.Util.Padding import unpad, pad
 from Crypto.Signature import pkcs1_15
 import hashlib
@@ -22,6 +22,7 @@ class MainApp:
                 self.public_key = RSA.import_key(public_key_file.read())
         except FileNotFoundError:
             messagebox.showerror("Error", "Missing public key")
+
         self.name = os.getlogin()
         self.master = master
         master.title("BSK Application")
@@ -31,24 +32,23 @@ class MainApp:
         self.select_button = tk.Button(self.master, text="Enter PIN", command=self.enter_pin)
         self.select_button.pack(pady=20)
 
-        # Utworzenie ramki do umieszczenia przycisków obok siebie
         self.button_frame = tk.Frame(master)
         self.button_frame.pack()
 
         self.sign_button = tk.Button(self.button_frame, text="Sign Document", command=self.sign_document, state=tk.DISABLED)
-        self.sign_button.pack(side=tk.LEFT, padx=5)  # Ustawienie przycisku na lewej stronie
+        self.sign_button.pack(side=tk.LEFT, padx=5)
 
-        self.verify_button = tk.Button(self.button_frame, text="Verify Signature", command=self.verify_signature, state=tk.DISABLED)
-        self.verify_button.pack(side=tk.LEFT, padx=5)  # Ustawienie przycisku na lewej stronie
+        self.verify_button = tk.Button(self.button_frame, text="Verify Signature", command=self.verify_signature)
+        self.verify_button.pack(side=tk.LEFT, padx=5)
 
         self.button_frame = tk.Frame(master)
         self.button_frame.pack(pady=20)
 
-        self.encrypt_button = tk.Button(self.button_frame, text="Encrypt File", command=self.basic_encryption_with_RSA_keys, state=tk.DISABLED)
-        self.encrypt_button.pack(side=tk.LEFT, padx=5)  # Ustawienie przycisku na lewej stronie
-
         self.decrypt_button = tk.Button(self.button_frame, text="Decrypt File", command=self.basic_decryption_with_RSA_keys, state=tk.DISABLED)
-        self.decrypt_button.pack(side=tk.LEFT, padx=5)  # Ustawienie przycisku na lewej stronie
+        self.decrypt_button.pack(side=tk.LEFT, padx=5)
+
+        self.encrypt_button = tk.Button(self.button_frame, text="Encrypt File", command=self.basic_encryption_with_RSA_keys)
+        self.encrypt_button.pack(side=tk.LEFT, padx=5)
 
     def enter_pin(self):
         # Odszukanie zaszyfrowanego klucza na pendrivie
@@ -68,7 +68,6 @@ class MainApp:
             encrypted_private_key = private_key_file.read()
 
         # Tworzenie nowego obiektu AES do deszyfrowania
-        # aes_key = b'This is a key123'
         aes_key = hashlib.sha256(self.pin.encode('utf-8')).digest()
         iv = b'This is an IV456'
 
@@ -88,15 +87,13 @@ class MainApp:
             # Obsługa błędu deszyfrowania
             messagebox.showerror("Error", "Incorrect PIN. Please try again.")
             return
-        
+
         # Zapisanie odszyfrowanego klucza prywatnego do pliku
         # with open("private_key.pem", "w") as decrypted_private_key_file:
         #     decrypted_private_key_file.write(decrypted_private_key)
         
         messagebox.showinfo("Login", "PIN is correct!")
         self.sign_button.config(state=tk.NORMAL)
-        self.verify_button.config(state=tk.NORMAL)
-        self.encrypt_button.config(state=tk.NORMAL)
         self.decrypt_button.config(state=tk.NORMAL)
     
     def sign_document(self):
@@ -108,23 +105,23 @@ class MainApp:
         with open(file_path, 'rb') as file:
             file_content = file.read()
         
-        # Hashing data
+        # Haszowanie zawartosci pliku
         hashed_content = SHA256.new(file_content)
 
-        # Signing the data
+        # Podpisywanie pliku
         signature = pkcs1_15.new(rsa_key=self.private_key).sign(hashed_content)
         signature_base64 = base64.b64encode(signature).decode('utf-8')
 
-        # Create the structure for xml in the desired standard
+        # Utworzenie struktury xml w odpowiednim formacie
         root = etree.Element("Signature", xmlns="http://www.w3.org/2000/09/xmldsig#")
 
-        # Information about the document
+        # Informacje o dokumencie
         doc_info = etree.SubElement(root, "DocumentInfo")
         etree.SubElement(doc_info, "Size").text = str(os.path.getsize(file_path))
         etree.SubElement(doc_info, "Extension").text = os.path.splitext(file_path)[1]
         etree.SubElement(doc_info, "ModificationDate").text = time.ctime(os.path.getmtime(file_path))
 
-        # Information about the user signing the document
+        # Informacje o uzytkowniku podpisujacym
         user_info_elem = etree.SubElement(root, "UserInfo")
         etree.SubElement(user_info_elem, "Name").text = self.name
 
@@ -154,7 +151,7 @@ class MainApp:
         etree.SubElement(rsa_key_value, "Modulus").text = modulus
         etree.SubElement(rsa_key_value, "Exponent").text = exponent
 
-        # Encrypted hash of the document
+        # Zaszyfrowana i haszowana zawartosc pliku
         encrypted_hash = base64.b64encode(hashed_content.digest()).decode('utf-8')
         encrypted_hash_elem = etree.SubElement(root, "EncryptedHash")
         encrypted_hash_elem.text = encrypted_hash
@@ -237,28 +234,20 @@ class MainApp:
         with open(file_path, "rb") as f:
             file_data = f.read()
 
-        padded_file = pad(file_data,16)
-
-        # Klucz AES i IV
-        aes_key = hashlib.sha256(self.pin.encode('utf-8')).digest()
-        iv = b'This is an IV456'
-
-        # Tworzenie obiektu szyfrującego AES
-        aes_cipher = AES.new(aes_key, AES.MODE_CBC, iv)
-        encrypted_file = aes_cipher.encrypt(padded_file)
-
         # Pobranie rozszerzenia pliku
         file_extension = os.path.splitext(file_path)[1]
 
-        # Zapisanie zaszyfrowanego pliku wraz z rozszerzeniem
-        with open(f"encrypted_{os.path.splitext(os.path.basename(file_path))[0]}.enc", "wb") as encrypted_key_file:
-            encrypted_key_file.write(file_extension.encode('utf-8') + b'\0' + encrypted_file)
+        # Zaszyfrowanie zawartosci pliku
+        cipher_rsa = PKCS1_OAEP.new(self.public_key)
+        encrypted_file_content = cipher_rsa.encrypt(pad(file_data,16))  
 
-        # with open("encrypted_file.enc", "wb") as encrypted_key_file:
-        #     encrypted_key_file.write(encrypted_file)
+        # Zapisanie zaszyfrowanego pliku wraz z rozszerzeniem
+        with open(f"encrypted_{os.path.splitext(os.path.basename(file_path))[0]}.enc", "wb") as encrypted_file:
+            encrypted_file.write(file_extension.encode('utf-8') + b'\0' + encrypted_file_content)
 
     def basic_decryption_with_RSA_keys(self):
         encrypted_file_path = filedialog.askopenfilename(filetypes=[("Pliki zaszyfrowane", "*.enc")])
+
         with open(encrypted_file_path, "rb") as f:
             encrypted_file_data = f.read()
         
@@ -266,19 +255,17 @@ class MainApp:
         file_extension, encrypted_file_data = encrypted_file_data.split(b'\0', 1)
         file_extension = file_extension.decode('utf-8')
 
-        aes_key = hashlib.sha256(self.pin.encode('utf-8')).digest()
-        iv = b'This is an IV456'
-
-        aes_cipher_decrypt = AES.new(aes_key, AES.MODE_CBC, iv)
         try:
             # Deszyfrowanie klucza
-            decrypted_file = unpad(aes_cipher_decrypt.decrypt(encrypted_file_data), 16).decode('utf-8')
-            with open(f"decrypted_{os.path.splitext(os.path.basename(encrypted_file_path))[0]}{file_extension}", "w") as decrypted_private_key_file:
-                decrypted_private_key_file.write(decrypted_file)
+            cipher_rsa = PKCS1_OAEP.new(self.private_key)
+            decrypted_file_content = unpad(cipher_rsa.decrypt(encrypted_file_data), 16)
+
+            with open(f"decrypted_{os.path.splitext(os.path.basename(encrypted_file_path))[0]}{file_extension}", "wb") as decrypted_file:
+                decrypted_file.write(decrypted_file_content)
 
         except ValueError:
             # Obsługa błędu deszyfrowania
-            messagebox.showerror("Error", "Incorrect PIN. Please try again.")
+            messagebox.showerror("Error", "Incorrect private key. Please try again.")
             return
         
 
