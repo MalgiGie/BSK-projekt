@@ -1,0 +1,33 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<Signature xmlns="http://www.w3.org/2000/09/xmldsig#">
+  <DocumentInfo>
+    <Size>5</Size>
+    <Extension>.txt</Extension>
+    <ModificationDate>Sat Jun  8 12:19:24 2024</ModificationDate>
+  </DocumentInfo>
+  <UserInfo>
+    <Name>Malgorzata</Name>
+  </UserInfo>
+  <SignedInfo>
+    <CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
+    <SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/>
+    <Reference URI="C:/Users/Malgorzata/Desktop/BSK-projekt/plik_testowy1.txt">
+      <Transforms>
+        <Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
+      </Transforms>
+      <DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
+      <DigestValue>NrvlDtloQdEEQ7y2cNZVTwo0t2G+Z+ycSorSwMRMpCw=</DigestValue>
+    </Reference>
+  </SignedInfo>
+  <SignatureValue>R4413/SOfhQTsRzbSQhkmdZCE34bDWOnWZYY8rhFcW7uq1v78LWOeOrBtxQL9Oc2Bzt8+TzngGot3G2yTEenB0SAuDo8feWSk/ftJso/uwWV1Ky6sWSXaP9q+0zZrY5ntdjW7DrRZazoDAWNYXCA7yO51c6RdnUvSqQmRe14XkPoNJClFMcxkxvCr4A+FCv03+Zz821cSnrUK4XnIlHPiOS+RY5OJ729k8u1/9ZDAPrrtCdD2+mVeIx6tdKZ3hbujNFAL1w4YNVaEipEUuQSIEIkBvb9IpK63C1jEKx8G0IoWYVrsPY4Paea/ncwhNiAcUC9Jvj/HckRbe+pwaRnT0xAUbcpuoFnmH7iN/BKJa5SvJ+KnyK1DYjR9goEuemZKjKJkf/VTnjeCn4k0UdHlScvQQU4EcDSKI6clCmBnBZ7OcDlMWa0HbCWGVbcSY4RxLlVlzUUbuuJuKfhFcpzhJdUQ6BvsJeZW4xeBowC+BeGJu7RxQ/DaKhLa3y9QK8s49ZCtFlsCgFifbAFudmG18LyZoVcE2FkmlsNovrzTeDdqKxA2pfsTPRAMtOCvJSOQTHMYz1LdVGvX2PI2tIg+GxQPO0C/EDdHwFf7BXwUBWGdfLdm4aQ4Vhki/maTIRGibJgCa1pY6jJSaMg7v/SqrZTzNzJDV9a8D3VV5rrrlo=</SignatureValue>
+  <KeyInfo>
+    <KeyValue>
+      <RSAKeyValue>
+        <Modulus>5Bm1zNecc0qaSI4xvSUX3uf6c5AdBYk9Q14q426t8Q3ypqyZOMyrd5+Nm2q+0NCUbOBUsmnA1nV/+dm4dUqvJW0G2PqsFAT2RkLJj438f+lli0eNNTK3p//MkKuf1xY9tWjatTPDMN1RyZ+dWCB9su87FngkDuA8h8CxpVUlLfbSqgPBtsfY+2I7LAJu0+qFGd4olA/FQfg2QaLlUydNxPThYDi6KbTcelLwLnqDU3LavgPHMJQXD6lJHN639IvedYz/LSCChJJK0tTeETOFWfUjW2YPYbTGR2+BcBaKFR7RZ9Wrs+fZyu65XIKuJWBfHbjukuv7L9RDVaz1gZN+uxwCQbKoI9JCWlLpsPq3jyOBkpRTSUkeA4GXWtfs3dvEIX0dqdu792xLXQ2/MCnnJEHVgD27lZkKpjd/0FOw9wWbPMJI3BHDGZuKAHHjWWylLopIbWz2hQTfRk4wgKoP8J+sQ6b3FnBjyEuBP4/s3NmVDqZ7evHRF+nBqMqkNcpd6BrEIyknzjqShUpCEZ/pOPWwtphLmjaTvqNUG0SSIYfdua8jmEPLh9hmUbLJHR8g7xfSDc4FTI2miNrty88m6hp/7vr8B4gdJoCO/qs7UV4IRs1/PHQBdmIefPvDwZWQm68F/0YoLdlcsa3Eey8tXWkUZx1Ich5xY8hPldNHbUc=</Modulus>
+        <Exponent>AQAB</Exponent>
+      </RSAKeyValue>
+    </KeyValue>
+  </KeyInfo>
+  <EncryptedHash>NrvlDtloQdEEQ7y2cNZVTwo0t2G+Z+ycSorSwMRMpCw=</EncryptedHash>
+  <Timestamp>2024-06-08T15:22:31</Timestamp>
+</Signature>

@@ -27,7 +27,7 @@ class MainApp:
         self.master = master
         master.title("BSK Application")
 
-        master.geometry("400x200")
+        master.geometry("500x250")
 
         self.select_button = tk.Button(self.master, text="Enter PIN", command=self.enter_pin)
         self.select_button.pack(pady=20)
@@ -41,14 +41,17 @@ class MainApp:
         self.verify_button = tk.Button(self.button_frame, text="Verify Signature", command=self.verify_signature)
         self.verify_button.pack(side=tk.LEFT, padx=5)
 
-        self.button_frame = tk.Frame(master)
-        self.button_frame.pack(pady=20)
+        self.button_frame2 = tk.Frame(master)
+        self.button_frame2.pack(pady=20)
 
-        self.decrypt_button = tk.Button(self.button_frame, text="Decrypt File", command=self.basic_decryption_with_RSA_keys, state=tk.DISABLED)
+        self.decrypt_button = tk.Button(self.button_frame2, text="Decrypt File", command=self.basic_decryption_with_RSA_keys, state=tk.DISABLED)
         self.decrypt_button.pack(side=tk.LEFT, padx=5)
 
-        self.encrypt_button = tk.Button(self.button_frame, text="Encrypt File", command=self.basic_encryption_with_RSA_keys)
+        self.encrypt_button = tk.Button(self.button_frame2, text="Encrypt File", command=self.basic_encryption_with_RSA_keys)
         self.encrypt_button.pack(side=tk.LEFT, padx=5)
+
+        self.app_info = tk.Label(master, text="")
+        self.app_info.pack(pady=5)
 
     def enter_pin(self):
         # Odszukanie zaszyfrowanego klucza na pendrivie
@@ -95,6 +98,7 @@ class MainApp:
         messagebox.showinfo("Login", "PIN is correct!")
         self.sign_button.config(state=tk.NORMAL)
         self.decrypt_button.config(state=tk.NORMAL)
+        self.app_info.config(text=f"Correct PIN provided")
     
     def sign_document(self):
         file_path = filedialog.askopenfilename()
@@ -160,10 +164,18 @@ class MainApp:
         timestamp.text = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())
 
         tree = etree.ElementTree(root)
-        with open("signature_file.xml", "wb") as f:
-            tree.write(f, pretty_print=True, xml_declaration=True, encoding="UTF-8")
+        file_name, file_extension = os.path.splitext(os.path.basename(file_path))
 
-        messagebox.showinfo("Signature", "Document signed successfully!")
+        target_path = filedialog.asksaveasfilename(defaultextension=".xml", filetypes=[("XML Files", "*.xml")], initialfile=f"signature_{file_name}")
+        if target_path:
+            with open(target_path, "wb") as file:
+                tree.write(file, pretty_print=True, xml_declaration=True, encoding="UTF-8")
+
+        # with open(target_path, "wb") as f:
+        #     tree.write(f, pretty_print=True, xml_declaration=True, encoding="UTF-8")
+
+        messagebox.showinfo("Signature", "File signed successfully!")
+        self.app_info.config(text=f"{file_name}{file_extension} was signed successfully\n The signature is at \n{target_path}")
 
     def verify_signature(self):
         signature_file = filedialog.askopenfilename(filetypes=[("Pliki XML", "*.xml")])
@@ -227,6 +239,9 @@ class MainApp:
                         f"Użytkownik podpisujący: {user_name}")
         except (ValueError, TypeError):
             messagebox.showinfo("Verification", "The signature is not valid")
+            return
+        
+        self.app_info.config(text=f"The signature at \n{signature_file}\nis valid")
 
     def basic_encryption_with_RSA_keys(self):
         file_path = filedialog.askopenfilename()
@@ -235,15 +250,23 @@ class MainApp:
             file_data = f.read()
 
         # Pobranie rozszerzenia pliku
-        file_extension = os.path.splitext(file_path)[1]
+        file_name, file_extension = os.path.splitext(os.path.basename(file_path))
 
-        # Zaszyfrowanie zawartosci pliku
-        cipher_rsa = PKCS1_OAEP.new(self.public_key)
-        encrypted_file_content = cipher_rsa.encrypt(pad(file_data,16))  
-
+        try:
+            # Zaszyfrowanie zawartosci pliku
+            cipher_rsa = PKCS1_OAEP.new(self.public_key)
+            encrypted_file_content = cipher_rsa.encrypt(pad(file_data,16))  
+        except:
+            messagebox.showerror("Error", "Plaintext is too long")
+            return
+        
         # Zapisanie zaszyfrowanego pliku wraz z rozszerzeniem
-        with open(f"encrypted_{os.path.splitext(os.path.basename(file_path))[0]}.enc", "wb") as encrypted_file:
-            encrypted_file.write(file_extension.encode('utf-8') + b'\0' + encrypted_file_content)
+        target_path = filedialog.asksaveasfilename(defaultextension=".enc", filetypes=[("Encrypted Files", "*.enc")], initialfile=f"encrypted_{file_name}")
+        if target_path:
+            with open(target_path, "wb") as encrypted_file:
+                encrypted_file.write(file_extension.encode('utf-8') + b'\0' + encrypted_file_content)
+
+        self.app_info.config(text=f"The encrypted file is at \n{target_path}")
 
     def basic_decryption_with_RSA_keys(self):
         encrypted_file_path = filedialog.askopenfilename(filetypes=[("Pliki zaszyfrowane", "*.enc")])
@@ -260,13 +283,21 @@ class MainApp:
             cipher_rsa = PKCS1_OAEP.new(self.private_key)
             decrypted_file_content = unpad(cipher_rsa.decrypt(encrypted_file_data), 16)
 
-            with open(f"decrypted_{os.path.splitext(os.path.basename(encrypted_file_path))[0]}{file_extension}", "wb") as decrypted_file:
-                decrypted_file.write(decrypted_file_content)
+            file_name = os.path.splitext(os.path.basename(encrypted_file_path))[0]
+
+            target_path = filedialog.asksaveasfilename(defaultextension=file_extension, filetypes=[("All Files", "*.*")], initialfile=f"decrypted_{file_name}")
+            if target_path:
+                with open(target_path, "wb") as decrypted_file:
+                    decrypted_file.write(decrypted_file_content)
+                self.app_info.config(text=f"The decrypted file is at \n{target_path}")
 
         except ValueError:
             # Obsługa błędu deszyfrowania
             messagebox.showerror("Error", "Incorrect private key. Please try again.")
             return
+        
+        
+        
         
 
 def main():
