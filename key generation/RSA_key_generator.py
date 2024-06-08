@@ -15,7 +15,7 @@ class KeyGeneratorApp:
         self.label = tk.Label(master, text="Enter PIN:")
         self.label.pack(pady=5)
 
-        self.pin_entry = tk.Entry(master)#, show="*")
+        self.pin_entry = tk.Entry(master)
         self.pin_entry.pack(pady=5)
 
         self.generate_button = tk.Button(master, text="Generate Keys", command=self.generate_keys)
